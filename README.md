@@ -2,8 +2,8 @@
 
 > **Open-source RAG agent** that answers employee questions about company policies using AI-powered document understanding.
 
-[![CI — Lint, Test & Security](https://github.com/YOUR_USERNAME/ai-hr-policy-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/ai-hr-policy-agent/actions/workflows/ci.yml)
-[![Deploy to Cloud Run](https://github.com/YOUR_USERNAME/ai-hr-policy-agent/actions/workflows/deploy.yml/badge.svg)](https://github.com/YOUR_USERNAME/ai-hr-policy-agent/actions/workflows/deploy.yml)
+[![CI — Lint, Test & Security](https://github.com/arpitkorde/ai-hr-policy-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/arpitkorde/ai-hr-policy-agent/actions/workflows/ci.yml)
+[![Deploy to Cloud Run](https://github.com/arpitkorde/ai-hr-policy-agent/actions/workflows/deploy.yml/badge.svg)](https://github.com/arpitkorde/ai-hr-policy-agent/actions/workflows/deploy.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -93,7 +93,7 @@ Every push triggers a comprehensive security pipeline:
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/YOUR_USERNAME/ai-hr-policy-agent.git
+git clone https://github.com/arpitkorde/ai-hr-policy-agent.git
 cd ai-hr-policy-agent
 
 # 2. Create virtual environment

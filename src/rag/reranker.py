@@ -11,7 +11,7 @@ Architecture:
 import logging
 
 from sentence_transformers import CrossEncoder
-from langchain.schema import Document
+from langchain_core.documents import Document
 
 from src.config import settings
 

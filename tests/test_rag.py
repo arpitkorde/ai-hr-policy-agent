@@ -75,7 +75,7 @@ class TestDocumentIngestor:
 
     def test_split_documents(self):
         """Test document splitting produces chunks."""
-        from langchain.schema import Document
+        from langchain_core.documents import Document
 
         long_text = "This is a test sentence. " * 100
         docs = [Document(page_content=long_text, metadata={"source": "test.txt"})]

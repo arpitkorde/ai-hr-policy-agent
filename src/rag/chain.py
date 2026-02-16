@@ -11,7 +11,7 @@ import time
 from dataclasses import dataclass, field
 
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.schema import Document
+from langchain_core.documents import Document
 
 from src.config import settings
 from src.rag.vector_store import VectorStoreManager
