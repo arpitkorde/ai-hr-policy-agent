@@ -41,6 +41,10 @@ class Settings(BaseSettings):
     api_host: str = Field(default="0.0.0.0", description="API server host")
     api_port: int = Field(default=8000, description="API server port")
 
+    # --- Slack Integration ---
+    slack_bot_token: str | None = Field(default=None, description="Slack Bot User OAuth Token")
+    slack_signing_secret: str | None = Field(default=None, description="Slack Signing Secret")
+
     model_config = {"extra": "ignore"}
 
 

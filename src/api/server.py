@@ -14,9 +14,11 @@ import shutil
 import tempfile
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+
+from src.slack.bot import app_handler, init_slack_bot
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -47,6 +49,7 @@ async def lifespan(app: FastAPI):
         vector_store=vector_store,
         reranker=reranker,
     )
+    init_slack_bot(chain)
     logger.info("All components initialized successfully.")
     yield
     logger.info("Shutting down HR Policy Agent.")
@@ -191,3 +194,11 @@ async def get_prompts():
     """List available prompt template versions."""
     from src.rag.prompts import list_prompt_versions
     return {"versions": list_prompt_versions()}
+
+
+@app.post("/slack/events")
+async def slack_events(req: Request):
+    """Handle Slack Events API requests."""
+    if not app_handler:
+        raise HTTPException(status_code=503, detail="Slack Bot not configured.")
+    return await app_handler.handle(req)
