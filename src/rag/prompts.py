@@ -4,7 +4,7 @@ Centralized prompt management with versioning for A/B testing
 and iterative improvement of RAG response quality.
 """
 
-from langchain.prompts import ChatPromptTemplate, PromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 
 # --- Prompt Version Registry ---
 PROMPT_VERSIONS = {}

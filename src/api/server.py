@@ -18,19 +18,13 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from src.rag.ingest import DocumentIngestor
-from src.rag.vector_store import VectorStoreManager
-from src.rag.reranker import BERTReranker
-from src.rag.chain import HRPolicyChain
-from src.rag.prompts import list_prompt_versions
-
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 # --- Global instances (initialized on startup) ---
-ingestor: DocumentIngestor | None = None
-vector_store: VectorStoreManager | None = None
-chain: HRPolicyChain | None = None
+ingestor = None
+vector_store = None
+chain = None
 
 
 @asynccontextmanager
@@ -39,6 +33,13 @@ async def lifespan(app: FastAPI):
     global ingestor, vector_store, chain
 
     logger.info("Initializing HR Policy Agent components...")
+
+    # Lazy imports to avoid Python 3.14 + Pydantic v1 conflicts at module load
+    from src.rag.ingest import DocumentIngestor
+    from src.rag.vector_store import VectorStoreManager
+    from src.rag.reranker import BERTReranker
+    from src.rag.chain import HRPolicyChain
+
     ingestor = DocumentIngestor()
     vector_store = VectorStoreManager()
     reranker = BERTReranker()
@@ -188,4 +189,5 @@ async def get_stats():
 @app.get("/prompts")
 async def get_prompts():
     """List available prompt template versions."""
+    from src.rag.prompts import list_prompt_versions
     return {"versions": list_prompt_versions()}

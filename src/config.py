@@ -1,7 +1,13 @@
 """Application configuration using Pydantic Settings."""
 
+from pathlib import Path
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
 from pydantic import Field
+
+# Explicitly load .env into os.environ BEFORE Pydantic reads them
+_ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(_ENV_FILE, override=False)
 
 
 class Settings(BaseSettings):
@@ -35,7 +41,7 @@ class Settings(BaseSettings):
     api_host: str = Field(default="0.0.0.0", description="API server host")
     api_port: int = Field(default=8000, description="API server port")
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
+    model_config = {"extra": "ignore"}
 
 
 # Singleton instance
