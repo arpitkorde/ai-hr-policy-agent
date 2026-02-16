@@ -1,0 +1,16 @@
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "S", "B"]
+ignore = ["S101"]  # Allow assert in tests
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S"]  # Disable security checks in tests
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_functions = "test_*"
+addopts = "-v --tb=short"

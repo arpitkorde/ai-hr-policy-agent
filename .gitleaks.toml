@@ -1,0 +1,30 @@
+# Gitleaks Configuration
+# Prevents accidental commits of API keys and secrets
+
+title = "Gitleaks Config for HR Policy Agent"
+
+[allowlist]
+description = "Global allowlist"
+paths = [
+    '''.env\.example''',
+    '''\.gitleaks\.toml''',
+    '''README\.md''',
+]
+
+[[rules]]
+id = "google-api-key"
+description = "Google API Key"
+regex = '''AIza[0-9A-Za-z\-_]{35}'''
+tags = ["key", "google"]
+
+[[rules]]
+id = "generic-api-key"
+description = "Generic API Key"
+regex = '''(?i)(api[_-]?key|apikey)\s*[:=]\s*['\"]([a-zA-Z0-9\-_]{20,})['\"]'''
+tags = ["key", "generic"]
+
+[[rules]]
+id = "generic-secret"
+description = "Generic Secret"
+regex = '''(?i)(secret|password|token)\s*[:=]\s*['\"]([a-zA-Z0-9\-_]{8,})['\"]'''
+tags = ["secret", "generic"]

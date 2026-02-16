@@ -1,0 +1,80 @@
+SAMPLE HR POLICY DOCUMENT — ACME CORPORATION
+==============================================
+
+1. LEAVE POLICY
+-----------------
+
+1.1 Annual Leave
+Employees are entitled to 20 days of paid annual leave per calendar year.
+New employees joining mid-year will receive prorated leave based on their
+start date. Unused leave can be carried forward up to a maximum of 5 days
+to the next calendar year. Any leave beyond 5 days will lapse.
+
+1.2 Sick Leave
+Employees are entitled to 12 days of paid sick leave per year. A medical
+certificate is required for sick leave exceeding 3 consecutive days.
+Unused sick leave cannot be carried forward or encashed.
+
+1.3 Parental Leave
+Maternity leave: 26 weeks of paid leave for the primary caregiver.
+Paternity leave: 2 weeks of paid leave for the secondary caregiver.
+Adoption leave: 12 weeks of paid leave for the primary adopting parent.
+
+1.4 Work From Home
+Employees may work from home up to 2 days per week with manager approval.
+Remote work requests exceeding 2 days require VP-level approval.
+
+2. CODE OF CONDUCT
+--------------------
+
+2.1 Professional Behavior
+All employees are expected to maintain professional conduct in the workplace.
+Harassment, discrimination, or bullying of any kind will not be tolerated
+and may result in immediate termination.
+
+2.2 Dress Code
+Business casual attire is expected Monday through Thursday.
+Casual attire is permitted on Fridays.
+
+2.3 Confidentiality
+Employees must not disclose proprietary company information to external
+parties without written authorization from their department head.
+
+3. COMPENSATION & BENEFITS
+----------------------------
+
+3.1 Salary Reviews
+Performance reviews and salary adjustments occur annually in April.
+Mid-year reviews may be conducted in October at the manager's discretion.
+
+3.2 Health Insurance
+The company provides comprehensive health insurance covering:
+- Employee: 100% premium covered
+- Spouse: 80% premium covered
+- Children (up to 3): 80% premium covered
+Maximum coverage: $500,000 per family per year.
+
+3.3 Retirement Benefits
+The company matches employee 401(k) contributions up to 6% of base salary.
+Vesting schedule: 25% per year, fully vested after 4 years.
+
+3.4 Learning & Development
+Each employee has an annual learning budget of $2,000 for courses,
+certifications, and conferences. Requests must be approved by the
+reporting manager and HR.
+
+4. GRIEVANCE PROCEDURE
+------------------------
+
+4.1 Reporting
+Employees may report grievances to their manager, HR, or through the
+anonymous ethics hotline at ethics@acmecorp.com.
+
+4.2 Investigation
+All grievances will be investigated within 10 business days.
+The employee will be informed of the outcome within 5 business days
+after investigation completion.
+
+4.3 Retaliation
+The company has a strict anti-retaliation policy. Any employee found
+retaliating against a complainant will face disciplinary action.

@@ -1,0 +1,91 @@
+# Deploy Pipeline — Runs on push to main (after CI passes)
+# Build → Container Scan (Trivy) → Push to Artifact Registry → Deploy to Cloud Run
+
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write  # Required for Workload Identity Federation
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: us-central1
+  SERVICE_NAME: hr-policy-agent
+  REGISTRY: us-central1-docker.pkg.dev
+
+jobs:
+  # Run CI checks first
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  build-scan-deploy:
+    name: "🚀 Build, Scan & Deploy"
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Authenticate to Google Cloud using Workload Identity Federation
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGISTRY }}
+
+      # Build Docker image
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/hr-agent/${{ env.SERVICE_NAME }}:${{ github.sha }} \
+            -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/hr-agent/${{ env.SERVICE_NAME }}:latest \
+            .
+
+      # Security: Scan container image with Trivy
+      - name: Container Security Scan — Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/hr-agent/${{ env.SERVICE_NAME }}:${{ github.sha }}"
+          format: "table"
+          exit-code: "0"
+          ignore-unfixed: true
+          severity: "CRITICAL,HIGH"
+
+      # Push to Artifact Registry
+      - name: Push to Artifact Registry
+        run: |
+          docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/hr-agent/${{ env.SERVICE_NAME }}:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/hr-agent/${{ env.SERVICE_NAME }}:latest
+
+      # Deploy to Cloud Run
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ env.SERVICE_NAME }}
+          region: ${{ env.REGION }}
+          image: ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/hr-agent/${{ env.SERVICE_NAME }}:${{ github.sha }}
+          flags: |
+            --allow-unauthenticated
+            --memory=2Gi
+            --cpu=2
+            --min-instances=0
+            --max-instances=3
+            --set-env-vars=GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}
+
+      - name: Show deployed URL
+        run: |
+          echo "🚀 Deployed to:"
+          gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region=${{ env.REGION }} \
+            --format="value(status.url)"

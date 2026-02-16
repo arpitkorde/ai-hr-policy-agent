@@ -1,0 +1,113 @@
+# CI Pipeline — Runs on Pull Requests
+# DevSecOps: Lint → Test → SAST → Dependency Scan → Secrets Detection
+
+name: CI — Lint, Test & Security Scan
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-test:
+    name: "🔍 Lint & Test"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Lint with Ruff
+        run: ruff check src/ tests/ --output-format=github
+
+      - name: Run tests
+        env:
+          GOOGLE_API_KEY: "test-key-not-real"
+        run: pytest tests/ -v --tb=short
+
+  security-sast:
+    name: "🛡️ SAST — Bandit"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Bandit
+        run: pip install bandit
+
+      - name: Run Bandit SAST scan
+        run: bandit -r src/ -f json -o bandit-report.json --severity-level medium || true
+
+      - name: Display Bandit results
+        run: bandit -r src/ --severity-level medium
+
+      - name: Upload Bandit report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bandit-sast-report
+          path: bandit-report.json
+
+  security-deps:
+    name: "📦 Dependency Scan — Safety"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Safety
+        run: pip install safety
+
+      - name: Install project dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Safety dependency scan
+        run: safety check --output json > safety-report.json || true
+
+      - name: Display Safety results
+        run: safety check || true
+
+      - name: Upload Safety report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: safety-dep-report
+          path: safety-report.json
+
+  security-secrets:
+    name: "🔑 Secrets Detection — Gitleaks"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
