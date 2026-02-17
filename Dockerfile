@@ -36,9 +36,9 @@ USER appuser
 # Expose port for Cloud Run
 EXPOSE 8000
 
-# Health check
+# Health check (dynamic port)
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
+    CMD python -c "import urllib.request, os; port = os.environ.get('PORT', '8080'); urllib.request.urlopen(f'http://localhost:{port}/health')" || exit 1
 
-# Run FastAPI server
-CMD ["uvicorn", "src.api.server:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run FastAPI server (respect PORT env var, default 8080 for Cloud Run)
+CMD sh -c "uvicorn src.api.server:app --host 0.0.0.0 --port ${PORT:-8080}"
