@@ -44,6 +44,14 @@ class Settings(BaseSettings):
     # --- Slack Integration ---
     slack_bot_token: str | None = Field(default=None, description="Slack Bot User OAuth Token")
     slack_signing_secret: str | None = Field(default=None, description="Slack Signing Secret")
+    slack_app_token: str | None = Field(default=None, description="Slack App-Level Token (for Socket Mode)")
+
+    # --- Microsoft Teams Integration ---
+    microsoft_app_id: str | None = Field(default=None, alias="MICROSOFT_APP_ID")
+    microsoft_app_tenant_id: str | None = Field(default=None, alias="MICROSOFT_APP_TENANT_ID")
+    
+    # Teams Auth Toggle (useful for local emulator testing)
+    teams_disable_auth: bool = Field(default=False, alias="TEAMS_DISABLE_AUTH")
 
     model_config = {"extra": "ignore"}
 

@@ -16,7 +16,7 @@ from langchain_core.documents import Document
 from src.config import settings
 from src.rag.vector_store import VectorStoreManager
 from src.rag.reranker import BERTReranker
-from src.rag.prompts import get_prompt
+from src.rag.prompts import get_prompt, get_condense_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -65,11 +65,12 @@ class HRPolicyChain:
             max_output_tokens=2048,
         )
 
-        # Load prompt template
+        # Load prompt templates
         self.prompt = get_prompt(prompt_version)
+        self.condense_prompt = get_condense_prompt()
         logger.info(f"HR Policy Chain initialized (prompt: {prompt_version})")
 
-    def query(self, question: str) -> QueryResult:
+    def query(self, question: str, chat_history: list[tuple[str, str]] | None = None) -> QueryResult:
         """Run the full RAG pipeline for a question.
 
         Args:
@@ -79,6 +80,12 @@ class HRPolicyChain:
             QueryResult with answer, sources, and observability metrics.
         """
         start_time = time.time()
+
+        # Step 0: Contextualize question if history exists
+        if chat_history:
+            original_question = question
+            question = self._rewrite_query(question, chat_history)
+            logger.info(f"Rewrote query: '{original_question}' -> '{question}'")
 
         # Step 1: Retrieve from vector store
         logger.info(f"Step 1: Retrieving chunks for: '{question[:80]}...'")
@@ -160,6 +167,18 @@ class HRPolicyChain:
                     "file_type": doc.metadata.get("file_type", "unknown"),
                 })
         return sources
+
+    def _rewrite_query(self, question: str, history: list[tuple[str, str]]) -> str:
+        """Rewrite a follow-up question to be a standalone query."""
+        # Format history as a string (Human: ... AI: ...)
+        history_str = "\n".join([f"Human: {h}\nAI: {a}" for h, a in history])
+        
+        messages = self.condense_prompt.format_messages(
+            chat_history=history_str,
+            question=question
+        )
+        response = self.llm.invoke(messages)
+        return response.content.strip()
 
     @staticmethod
     def _elapsed_ms(start_time: float) -> float:

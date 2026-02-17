@@ -1,6 +1,10 @@
 display_information:
   name: AI HR Agent
 features:
+  app_home:
+    home_tab_enabled: false
+    messages_tab_enabled: true
+    messages_tab_read_only_enabled: false
   bot_user:
     display_name: HR Bot
     always_online: true
@@ -15,5 +19,4 @@ settings:
     bot_events:
       - app_mention
       - message.im
-    request_url: https://YOUR_DOMAIN/slack/events
-  socket_mode_enabled: false
+  socket_mode_enabled: true

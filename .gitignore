@@ -37,3 +37,10 @@ htmlcov/
 
 # Uploaded documents (user data)
 uploads/
+
+# Debug Scripts & Logs
+test_teams.py
+teams_error_v2.log
+debug_request.log
+scripts/setup_gcp.ps1
+

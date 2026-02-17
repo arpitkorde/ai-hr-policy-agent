@@ -6,6 +6,13 @@ and iterative improvement of RAG response quality.
 
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 
+CONDENSE_QUESTION_TEMPLATE = """Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
+
+Chat History:
+{chat_history}
+Follow Up Input: {question}
+Standalone question:"""
+
 # --- Prompt Version Registry ---
 PROMPT_VERSIONS = {}
 
@@ -116,6 +123,11 @@ def get_prompt(version: str = "v2.0") -> ChatPromptTemplate:
             f"Prompt version '{version}' not found. Available: {available}"
         )
     return PROMPT_VERSIONS[version]()
+
+
+def get_condense_prompt() -> PromptTemplate:
+    """Get the prompt for rewriting follow-up questions."""
+    return PromptTemplate.from_template(CONDENSE_QUESTION_TEMPLATE)
 
 
 def list_prompt_versions() -> list[str]:

@@ -2,6 +2,7 @@ import logging
 import asyncio
 from slack_bolt.async_app import AsyncApp
 from slack_bolt.adapter.fastapi.async_handler import AsyncSlackRequestHandler
+from slack_bolt.adapter.socket_mode.async_handler import AsyncSocketModeHandler
 
 from src.config import settings
 
@@ -24,7 +25,7 @@ try:
 except Exception as e:
     logger.error(f"Failed to initialize Slack Bot: {e}")
 
-# Global reference to the RAG chain (injected at startup)
+# Global reference to the RAG chain
 _rag_chain = None
 
 
@@ -36,6 +37,34 @@ def init_slack_bot(chain_instance):
         logger.info("Slack Bot connected to RAG chain.")
 
 
+async def start_socket_mode():
+    """Start the Socket Mode handler in a background task."""
+    if slack_app and settings.slack_app_token:
+        try:
+            handler = AsyncSocketModeHandler(slack_app, settings.slack_app_token)
+            logger.info("Starting Slack Socket Mode handler...")
+            await handler.start_async()
+        except Exception as e:
+            logger.error(f"Failed to start Socket Mode: {e}")
+    elif not settings.slack_app_token:
+        logger.warning("SLACK_APP_TOKEN not provided. Socket Mode disabled.")
+
+
+# In-memory history storage: {thread_id: [(human, ai), ...]}
+# Key: thread_ts (if threaded) or channel_id (if DM)
+session_history = {}
+
+def get_session_history(thread_id: str) -> list[tuple[str, str]]:
+    """Retrieve chat history for a thread."""
+    return session_history.get(thread_id, [])
+
+def update_session_history(thread_id: str, human: str, ai: str):
+    """Update chat history for a thread (keep last 5 turns)."""
+    history = session_history.get(thread_id, [])
+    history.append((human, ai))
+    session_history[thread_id] = history[-5:]
+
+
 if slack_app:
     @slack_app.event("app_mention")
     async def handle_app_mentions(event, say):
@@ -44,6 +73,13 @@ if slack_app:
         text = event.get("text")
         channel = event.get("channel")
         thread_ts = event.get("ts")  # Reply in thread
+        
+        # Determine unique thread ID for history
+        # Use thread_ts if it exists (replying in thread), otherwise use ts of the message -> NO
+        # If user REPLIES to a thread, event["thread_ts"] exists.
+        # If user STARTS a thread, event["thread_ts"] is missing, but we reply in thread using event["ts"].
+        # So key should be event.get("thread_ts", event["ts"]).
+        thread_id = event.get("thread_ts", event["ts"])
 
         logger.info(f"Received Slack mention from {user}: {text}")
 
@@ -55,8 +91,15 @@ if slack_app:
         wait_msg = await say(":thinking_face: Searching HR policies...", thread_ts=thread_ts)
         
         try:
-            # Run RAG query in a separate thread to avoid blocking event loop
-            result = await asyncio.to_thread(_rag_chain.query, text)
+            # Retrieve history
+            history = get_session_history(thread_id)
+            
+            # Run RAG query in a separate thread
+            # Pass history to the chain
+            result = await asyncio.to_thread(_rag_chain.query, text, chat_history=history)
+
+            # Update history with new interaction
+            update_session_history(thread_id, text, result.answer)
 
             # Format the response using Slack Block Kit
             blocks = [
@@ -112,10 +155,6 @@ if slack_app:
     async def handle_message_events(event, say):
         """Handle direct messages (DMs)."""
         channel_type = event.get("channel_type")
-        
-        # Only respond to DMs
         if channel_type != "im":
             return
-
-        # Reuse the mention handler logic
         await handle_app_mentions(event, say)

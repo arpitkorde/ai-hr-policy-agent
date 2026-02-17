@@ -18,7 +18,10 @@ from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from src.slack.bot import app_handler, init_slack_bot
+from src.slack.bot import app_handler, init_slack_bot, start_socket_mode
+from botbuilder.core import BotFrameworkAdapter, BotFrameworkAdapterSettings
+from botbuilder.schema import Activity
+from src.config import settings
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -27,6 +30,9 @@ logging.basicConfig(level=logging.INFO)
 ingestor = None
 vector_store = None
 chain = None
+# Teams Bot components
+adapter = None
+teams_bot = None
 
 
 @asynccontextmanager
@@ -41,6 +47,9 @@ async def lifespan(app: FastAPI):
     from src.rag.vector_store import VectorStoreManager
     from src.rag.reranker import BERTReranker
     from src.rag.chain import HRPolicyChain
+    from src.teams.bot import TeamsBot
+
+    # Initialize RAG components
 
     ingestor = DocumentIngestor()
     vector_store = VectorStoreManager()
@@ -50,6 +59,32 @@ async def lifespan(app: FastAPI):
         reranker=reranker,
     )
     init_slack_bot(chain)
+
+    # Initialize Teams Bot
+    global adapter, teams_bot
+
+    should_disable_teams_auth = settings.teams_disable_auth
+    
+    if settings.microsoft_app_id and settings.microsoft_app_password:
+        if should_disable_teams_auth:
+             logger.warning("TEAMS_DISABLE_AUTH is True. Disabling Teams Authentication for local dev.")
+             adapter_settings = BotFrameworkAdapterSettings(app_id="", app_password="")
+        else:
+             adapter_settings = BotFrameworkAdapterSettings(
+                app_id=settings.microsoft_app_id,
+                app_password=settings.microsoft_app_password,
+            )
+
+        adapter = BotFrameworkAdapter(adapter_settings)
+        teams_bot = TeamsBot(chain)
+        logger.info(f"Microsoft Teams Bot initialized (Auth Disabled: {should_disable_teams_auth}).")
+    else:
+        logger.warning("Microsoft Teams credentials not found. Teams Bot disabled.")
+    
+    # Start Slack Socket Mode in background
+    import asyncio
+    asyncio.create_task(start_socket_mode())
+
     logger.info("All components initialized successfully.")
     yield
     logger.info("Shutting down HR Policy Agent.")
@@ -202,3 +237,29 @@ async def slack_events(req: Request):
     if not app_handler:
         raise HTTPException(status_code=503, detail="Slack Bot not configured.")
     return await app_handler.handle(req)
+
+
+@app.post("/api/messages")
+async def messages(req: Request):
+    """Handle Microsoft Teams Bot Framework messages."""
+    logger.info("Received request to /api/messages")
+    if not adapter:
+        logger.error("Teams Bot not configured.")
+        raise HTTPException(status_code=503, detail="Teams Bot not configured.")
+
+    if "application/json" not in req.headers.get("Content-Type", ""):
+        logger.error(f"Invalid Content-Type: {req.headers.get('Content-Type')}")
+        raise HTTPException(status_code=415, detail="Unsupported Media Type")
+
+    try:
+        body = await req.json()
+        activity = Activity().deserialize(body)
+        auth_header = req.headers.get("Authorization", "")
+        
+        response = await adapter.process_activity(activity, auth_header, teams_bot.on_turn)
+        if response:
+            return response.body
+        return None
+    except Exception as e:
+        logger.error(f"Error processing Teams activity: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
