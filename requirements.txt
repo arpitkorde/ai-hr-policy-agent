@@ -34,4 +34,6 @@ pydantic-settings>=2.0.0
 pytest>=8.0.0
 ruff>=0.8.0
 bandit>=1.8.0
-safety>=3.0.0
+# Chat Integration
+slack_bolt>=1.18.0
+botbuilder-core>=4.15.0
