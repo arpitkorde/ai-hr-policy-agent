@@ -27,10 +27,23 @@ COPY --from=builder /install /usr/local
 # Copy application code
 COPY . .
 
-# Create non-root user for security
-RUN useradd --create-home appuser && \
-    mkdir -p /app/chroma_db /app/uploads && \
+# Set Hugging Face cache directory to a writable location
+ENV HF_HOME=/app/model_cache
+
+# Create directory and set permissions
+RUN mkdir -p /app/model_cache && \
+    mkdir -p /app/chroma_db /app/uploads
+
+# Download model during build to avoid runtime rate limits
+COPY scripts/download_model.py /app/scripts/
+RUN python /app/scripts/download_model.py && \
+    # Ensure appuser owns the cache
+    chown -R appuser:appuser /app/model_cache /app/chroma_db /app/uploads
+
+# Create non-root user (already done above implicitly by chown, but good to be explicit)
+RUN useradd --create-home appuser || true && \
     chown -R appuser:appuser /app
+
 USER appuser
 
 # Expose port for Cloud Run
