@@ -30,19 +30,18 @@ COPY . .
 # Set Hugging Face cache directory to a writable location
 ENV HF_HOME=/app/model_cache
 
+# Create non-root user FIRST
+RUN useradd --create-home appuser
+
 # Create directory and set permissions
-RUN mkdir -p /app/model_cache && \
-    mkdir -p /app/chroma_db /app/uploads
+RUN mkdir -p /app/model_cache /app/chroma_db /app/uploads && \
+    chown -R appuser:appuser /app
 
 # Download model during build to avoid runtime rate limits
 COPY scripts/download_model.py /app/scripts/
 RUN python /app/scripts/download_model.py && \
-    # Ensure appuser owns the cache
-    chown -R appuser:appuser /app/model_cache /app/chroma_db /app/uploads
-
-# Create non-root user (already done above implicitly by chown, but good to be explicit)
-RUN useradd --create-home appuser || true && \
-    chown -R appuser:appuser /app
+    # Ensure appuser owns the cache (again, to be safe)
+    chown -R appuser:appuser /app/model_cache
 
 USER appuser
 
